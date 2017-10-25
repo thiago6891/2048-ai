@@ -61,7 +61,7 @@ class PlayerAI(BaseAI):
 		return (minChild, minUtility)
 	
 	def cutoffTest(self, state):
-		if time.clock() - self.startTime > 0.05:
+		if time.clock() - self.startTime > 0.06:
 			return True
 		if state.getMaxTile() >= 2048:
 			return True
@@ -76,46 +76,83 @@ class PlayerAI(BaseAI):
 		if state.getAvailableMoves() == []:
 			return -math.inf
 
-		return -self.smoothness(state) + self.monotonicity(state) + self.freeTiles(state)
+		heuristics = [
+			self.smoothness(state), 
+			self.monotonicity(state), 
+			self.freeTiles(state), 
+			state.getMaxTile()]
+		
+		weights = [
+			0.1,
+			0.8,
+			3.0,
+			1.0
+		]
+
+		return sum(x * y for x, y in zip(heuristics, weights))
 	
 	def monotonicity(self, state):
-		score = 0
+		totals = [0, 0, 0, 0]
 
-		lastDiff = state.map[0][1] - state.map[0][0]
 		for x in range(state.size):
-			for y in range(1, state.size):
-				diff = state.map[x][y] - state.map[x][y - 1]
-				if (diff > 0 and lastDiff > 0) or (diff < 0 and lastDiff < 0):
-					score += 10
-				elif (diff > 0 and lastDiff < 0) or (diff < 0 and lastDiff > 0):
-					score -= 10
-				lastDiff = diff
+			curr = 0
+			next = curr + 1
+			while next < state.size:
+				while next < state.size and state.map[x][next] == 0:
+					next += 1
+				if next >= state.size:
+					next -= 1
+				currVal = math.log(state.map[x][curr]) / math.log(2) if state.map[x][curr] != 0 else 0
+				nextVal = math.log(state.map[x][next]) / math.log(2) if state.map[x][next] != 0 else 0
+				if currVal > nextVal:
+					totals[0] += nextVal - currVal
+				elif nextVal > currVal:
+					totals[1] += currVal - nextVal
+				curr = next
+				next += 1
 		
-		lastDiff = state.map[1][0] - state.map[0][0]
 		for y in range(state.size):
-			for x in range(1, state.size):
-				diff = state.map[x][y] - state.map[x - 1][y]
-				if (diff > 0 and lastDiff > 0) or (diff < 0 and lastDiff < 0):
-					score += 10
-				elif (diff > 0 and lastDiff < 0) or (diff < 0 and lastDiff > 0):
-					score -= 10
-				lastDiff = diff
-		
-		# varies from -160 to 160
-		return (score + 160) / 320
+			curr = 0
+			next = curr + 1
+			while next < state.size:
+				while next < state.size and state.map[next][y] == 0:
+					next += 1
+				if next >= state.size:
+					next -= 1
+				currVal = math.log(state.map[curr][y]) / math.log(2) if state.map[curr][y] != 0 else 0
+				nextVal = math.log(state.map[next][y]) / math.log(2) if state.map[next][y] != 0 else 0
+				if currVal > nextVal:
+					totals[2] += nextVal - currVal
+				elif nextVal > currVal:
+					totals[3] += currVal - nextVal
+				curr = next
+				next += 1
+
+		return max(totals[0], totals[1]) + max(totals[2], totals[3])
 
 	def smoothness(self, state):
 		score = 0
 
 		for x in range(state.size):
 			for y in range(state.size):
-				if x + 1 < state.size:
-					score += math.fabs(state.map[x][y] - state.map[x + 1][y])
-				if y + 1 < state.size:
-					score += math.fabs(state.map[x][y] - state.map[x][y + 1])
+				if state.map[x][y] != 0:
+					value = math.log(state.map[x][y]) / math.log(2)
+
+					i = x + 1
+					while i < state.size and state.map[i][y] == 0:
+						i += 1
+					if i < state.size and state.map[i][y] != 0:
+						targetValue = math.log(state.map[i][y]) / math.log(2)
+						score -= math.fabs(value - targetValue)
+					
+					i = y + 1
+					while i < state.size and state.map[x][i] == 0:
+						i += 1
+					if i < state.size and state.map[x][i] != 0:
+						targetValue = math.log(state.map[x][i]) / math.log(2)
+						score -= math.fabs(value - targetValue)
 		
-		# varies from 0 to ~49,152 (?)
-		return score / 49152
+		return score
 
 	def freeTiles(self, state):
 		score = 0
@@ -125,8 +162,7 @@ class PlayerAI(BaseAI):
 				if state.map[x][y] == 0:
 					score += 1
 		
-		# varies from 0 to 16
-		return score / 16
+		return math.log(score)
 
 	def result(self, state, action):
 		newState = state.clone()

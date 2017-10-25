@@ -44,6 +44,7 @@ class GameManager:
     def updateAlarm(self, currTime):
         if currTime - self.prevTime > timeLimit + allowance:
             self.over = True
+            print('time up')
         else:
             while time.clock() - self.prevTime < timeLimit + allowance:
                 pass
@@ -54,7 +55,7 @@ class GameManager:
         for i in range(self.initTiles):
             self.insertRandonTile()
 
-        #self.displayer.display(self.grid)
+        self.displayer.display(self.grid)
 
         # Player AI Goes First
         turn = PLAYER_TURN
@@ -69,9 +70,9 @@ class GameManager:
             move = None
 
             if turn == PLAYER_TURN:
-                #print("Player's Turn:", end=" ")
+                print("Player's Turn:", end=" ")
                 move = self.playerAI.getMove(gridCopy)
-                #print(actionDic[move])
+                print(actionDic[move])
 
                 # Validate Move
                 if move != None and move >= 0 and move < 4:
@@ -87,7 +88,7 @@ class GameManager:
                     print("Invalid PlayerAI Move - 1")
                     self.over = True
             else:
-                #print("Computer's turn:")
+                print("Computer's turn:")
                 move = self.computerAI.getMove(gridCopy)
 
                 # Validate Move
@@ -97,8 +98,8 @@ class GameManager:
                     print("Invalid Computer AI Move")
                     self.over = True
 
-            #if not self.over:
-                #self.displayer.display(self.grid)
+            if not self.over:
+                self.displayer.display(self.grid)
 
             # Exceeding the Time Allotted for Any Turn Terminates the Game
             self.updateAlarm(time.clock())
@@ -122,7 +123,7 @@ class GameManager:
         self.grid.setCellValue(cell, tileValue)
 
 def main():
-    for i in range(5):
+    for i in range(1):
         gameManager = GameManager()
         playerAI  	= PlayerAI()
         computerAI  = ComputerAI()
