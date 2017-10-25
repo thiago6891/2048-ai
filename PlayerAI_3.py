@@ -4,8 +4,9 @@ from random import randint
 from BaseAI_3 import BaseAI
 
 class PlayerAI(BaseAI):
-	def __init__(self):
+	def __init__(self, weights):
 		self.startTime = 0
+		self.weights = weights
 
 	def getMove(self, grid):
 		return self.alphaBetaSearch(grid)
@@ -82,14 +83,14 @@ class PlayerAI(BaseAI):
 			self.freeTiles(state), 
 			state.getMaxTile()]
 		
-		weights = [
-			0.1,
-			0.8,
-			3.0,
-			1.0
-		]
+		#weights = [
+			#0.1,
+			#0.8,
+			#3.0,
+			#1.0
+		#]
 
-		return sum(x * y for x, y in zip(heuristics, weights))
+		return sum(x * y for x, y in zip(heuristics, self.weights))
 	
 	def monotonicity(self, state):
 		totals = [0, 0, 0, 0]

@@ -55,7 +55,7 @@ class GameManager:
         for i in range(self.initTiles):
             self.insertRandonTile()
 
-        self.displayer.display(self.grid)
+        #self.displayer.display(self.grid)
 
         # Player AI Goes First
         turn = PLAYER_TURN
@@ -70,9 +70,9 @@ class GameManager:
             move = None
 
             if turn == PLAYER_TURN:
-                print("Player's Turn:", end=" ")
+                #print("Player's Turn:", end=" ")
                 move = self.playerAI.getMove(gridCopy)
-                print(actionDic[move])
+                #print(actionDic[move])
 
                 # Validate Move
                 if move != None and move >= 0 and move < 4:
@@ -88,24 +88,25 @@ class GameManager:
                     print("Invalid PlayerAI Move - 1")
                     self.over = True
             else:
-                print("Computer's turn:")
+                #print("Computer's turn:")
                 move = self.computerAI.getMove(gridCopy)
 
                 # Validate Move
                 if move and self.grid.canInsert(move):
                     self.grid.setCellValue(move, self.getNewTileValue())
                 else:
-                    print("Invalid Computer AI Move")
+                    #print("Invalid Computer AI Move")
                     self.over = True
 
-            if not self.over:
-                self.displayer.display(self.grid)
+            #if not self.over:
+                #self.displayer.display(self.grid)
 
             # Exceeding the Time Allotted for Any Turn Terminates the Game
             self.updateAlarm(time.clock())
 
             turn = 1 - turn
-        print(maxTile)
+        #print(maxTile)
+        return maxTile
 
     def isGameOver(self):
         return not self.grid.canMove()
@@ -123,18 +124,49 @@ class GameManager:
         self.grid.setCellValue(cell, tileValue)
 
 def main():
-    for i in range(1):
-        gameManager = GameManager()
-        playerAI  	= PlayerAI()
-        computerAI  = ComputerAI()
-        displayer 	= Displayer()
+    file = open('output.txt', 'w')
+    start = time.clock()
+    for w1 in range(1, 31, 10):
+        for w2 in range(1, 31, 10):
+            for w3 in range(1, 31, 10):
+                for w4 in range(1, 31, 10):
+                    avgScore = 0
+                    for i in range(2):
+                        gameManager = GameManager()
+                        weights = [
+                            (w1) / 10,
+                            (w2) / 10,
+                            (w3) / 10,
+                            (w4) / 10
+                        ]
+                        playerAI = PlayerAI(weights)
+                        computerAI = ComputerAI()
+                        displayer = Displayer()
 
-        gameManager.setDisplayer(displayer)
-        gameManager.setPlayerAI(playerAI)
-        gameManager.setComputerAI(computerAI)
+                        gameManager.setDisplayer(displayer)
+                        gameManager.setPlayerAI(playerAI)
+                        gameManager.setComputerAI(computerAI)
 
-        print('Run #' + str(i + 1))
-        gameManager.start()
+                        avgScore += gameManager.start()
+                    
+                    avgScore /= 2
+                    result = ','.join(map(str, weights)) + ',' + str(avgScore) + '\n'
+                    print(result)
+                    file.write(result)
+    file.close()
+
+    #for i in range(1):
+        #gameManager = GameManager()
+        #playerAI  	= PlayerAI()
+        #computerAI  = ComputerAI()
+        #displayer 	= Displayer()
+
+        #gameManager.setDisplayer(displayer)
+        #gameManager.setPlayerAI(playerAI)
+        #gameManager.setComputerAI(computerAI)
+
+        #print('Run #' + str(i + 1))
+        #gameManager.start()
 
 if __name__ == '__main__':
     main()
